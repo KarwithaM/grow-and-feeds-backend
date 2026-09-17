@@ -76,7 +76,6 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
             continue; 
           }
 
-          // THIS IS THE LINE THAT WAS MISSING:
           let session = sessions.get(from) || { state: 'greeting' };
 
           // State Machine for Conversational Intake
@@ -104,13 +103,6 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
             if (isNaN(volume) || volume <= 0) {
               await sendWhatsAppMessage(from, "Please reply with a valid number greater than 0.");
               continue;
-                        // ... existing if statements for 'waste_type' and 'volume' ...
-
-          // ADD THIS FALLBACK FOR LOST SESSIONS:
-          if (session.state === 'greeting' && text !== 'hi' && text !== 'hello' && text !== 'start') {
-             await sendWhatsAppMessage(from, "It looks like our connection reset. Please send 'Hi' to start a new request.");
-             continue;
-          }
             }
             
             // Save to Supabase
@@ -130,6 +122,12 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
             
             // Reset session
             sessions.delete(from);
+            continue;
+          }
+
+          // Fallback for lost sessions (Render spin-down)
+          if (text !== 'hi' && text !== 'hello' && text !== 'start') {
+            await sendWhatsAppMessage(from, "It looks like our connection reset. Please send 'Hi' to start a new request.");
             continue;
           }
         }
