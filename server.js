@@ -59,6 +59,7 @@ app.get('/api/whatsapp/webhook', (req, res) => {
 // 2. INCOMING WHATSAPP MESSAGES
 app.post('/api/whatsapp/webhook', async (req, res) => {
   try {
+    console.log('📞 Webhook POST received at:', new Date().toISOString());
     const body = req.body;
     for (const entry of body?.entry || []) {
       for (const change of entry?.changes || []) {
