@@ -59,8 +59,6 @@ app.get('/api/whatsapp/webhook', (req, res) => {
 // 2. INCOMING WHATSAPP MESSAGES
 app.post('/api/whatsapp/webhook', async (req, res) => {
   console.log('📞 Webhook POST received at:', new Date().toISOString());
-  
-  // ADD THIS LINE TO SEE EXACTLY WHAT META IS SENDING:
   console.log('RAW META PAYLOAD:', JSON.stringify(req.body, null, 2));
 
   try {
@@ -71,11 +69,22 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
           const from = normalizePhone(message?.from);
           const text = message?.text?.body?.trim().toLowerCase();
           
-          console.log('Parsed FROM:', from, 'Parsed TEXT:', text); // Added for extra clarity
+          console.log('Parsed FROM:', from, 'Parsed TEXT:', text);
 
           if (!from || !text) {
             console.log('Skipping payload: missing from or text');
             continue; 
+          }
+
+          // THIS IS THE LINE THAT WAS MISSING:
+          let session = sessions.get(from) || { state: 'greeting' };
+
+          // State Machine for Conversational Intake
+          if (text === 'hi' || text === 'hello' || text === 'start') {
+            session = { state: 'waste_type' };
+            sessions.set(from, session);
+            await sendWhatsAppMessage(from, "Welcome to Grow and Feeds Patrons.\n\nWhat type of organic waste do you have?\nReply with:\n1. fruit_veg\n2. crop_residue\n3. manure");
+            continue;
           }
 
           if (session.state === 'waste_type') {
@@ -122,7 +131,7 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
     return res.status(200).send('EVENT_RECEIVED');
   } catch (error) {
     console.error('Webhook Error:', error);
-    return res.status(200).send('EVENT_RECEIVED'); // Always return 200 to Meta
+    return res.status(200).send('EVENT_RECEIVED');
   }
 });
 
